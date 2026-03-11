@@ -6,11 +6,19 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<albums_api.Services.CartService>();
 
 builder.Services.AddCors(options => {
-    options.AddDefaultPolicy(builder =>
+    options.AddDefaultPolicy(policy =>
     {
-        builder.AllowAnyOrigin();
-        builder.AllowAnyHeader();
-        builder.AllowAnyMethod();
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+        }
+        else
+        {
+            // Restrict to the known frontend origin in non-development environments
+            policy.WithOrigins("https://your-frontend-domain.com")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
     });
 });
 

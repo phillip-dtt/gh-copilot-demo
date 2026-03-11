@@ -5,6 +5,10 @@
       <h2>Your Cart <span v-if="cartStore.itemCount > 0">({{ cartStore.itemCount }})</span></h2>
     </div>
 
+    <div v-if="cartStore.error" class="cart-error">
+      ⚠️ {{ cartStore.error }}
+    </div>
+
     <div v-if="cartStore.items.length === 0" class="empty-cart">
       <p>🛒 Your cart is empty.</p>
       <RouterLink to="/" class="browse-btn">Browse Albums</RouterLink>
@@ -106,6 +110,16 @@ const handleImageError = (event: Event): void => {
 .browse-btn:hover {
   background: white;
   color: #667eea;
+}
+
+.cart-error {
+  background: rgba(229, 62, 62, 0.25);
+  border: 1px solid rgba(229, 62, 62, 0.6);
+  color: white;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.95rem;
 }
 
 .cart-items {

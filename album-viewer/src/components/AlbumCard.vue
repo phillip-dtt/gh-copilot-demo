@@ -24,9 +24,10 @@
       <button
         class="btn"
         :class="inCart ? 'btn-in-cart' : 'btn-primary'"
+        :disabled="isProcessing"
         @click="toggleCart"
       >
-        {{ inCart ? '✓ In Cart' : 'Add to Cart' }}
+        {{ isProcessing ? '…' : inCart ? '✓ In Cart' : 'Add to Cart' }}
       </button>
       <button class="btn btn-secondary">Preview</button>
     </div>
@@ -34,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import type { Album } from '../types/album'
 import { useCartStore } from '../stores/cart'
 
@@ -45,13 +46,20 @@ interface Props {
 const props = defineProps<Props>()
 const cartStore = useCartStore()
 
+const isProcessing = ref(false)
 const inCart = computed(() => cartStore.albumIds.includes(props.album.id))
 
 const toggleCart = async (): Promise<void> => {
-  if (inCart.value) {
-    await cartStore.removeFromCart(props.album.id)
-  } else {
-    await cartStore.addToCart(props.album)
+  if (isProcessing.value) return
+  isProcessing.value = true
+  try {
+    if (inCart.value) {
+      await cartStore.removeFromCart(props.album.id)
+    } else {
+      await cartStore.addToCart(props.album)
+    }
+  } finally {
+    isProcessing.value = false
   }
 }
 

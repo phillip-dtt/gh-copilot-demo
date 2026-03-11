@@ -1,48 +1,57 @@
+using System.Collections.Concurrent;
 using albums_api.Models;
 
 namespace albums_api.Services
 {
     public class CartService
     {
-        private readonly Dictionary<string, List<int>> _carts = new();
+        // Thread-safe outer dictionary; inner HashSet guarded by lock per cart
+        private readonly ConcurrentDictionary<string, HashSet<int>> _carts = new();
+
+        // Album lookup cached once at startup — avoids repeated GetAll() calls
+        private static readonly Dictionary<int, Album> _albumCache =
+            Album.GetAll().ToDictionary(a => a.Id);
 
         public Cart GetCart(string cartId)
         {
             var albumIds = GetOrCreateCart(cartId);
-            var allAlbums = Album.GetAll();
-            var items = albumIds
-                .Select(id => allAlbums.FirstOrDefault(a => a.Id == id))
-                .Where(a => a != null)
-                .Select(a => new CartItem(a!.Id, a.Title, a.Artist, a.Price, a.Image_url))
-                .ToList();
-
+            List<CartItem> items;
+            lock (albumIds)
+            {
+                items = albumIds
+                    .Where(id => _albumCache.ContainsKey(id))
+                    .Select(id => _albumCache[id])
+                    .Select(a => new CartItem(a.Id, a.Title, a.Artist, a.Price, a.Image_url))
+                    .ToList();
+            }
             return new Cart(cartId, items);
         }
 
-        public Cart AddItem(string cartId, int albumId)
+        // Returns null when albumId does not exist in the catalog
+        public Cart? AddItem(string cartId, int albumId)
         {
-            var albumIds = GetOrCreateCart(cartId);
-            if (!albumIds.Contains(albumId))
-                albumIds.Add(albumId);
+            if (!_albumCache.ContainsKey(albumId))
+                return null;
 
+            var albumIds = GetOrCreateCart(cartId);
+            lock (albumIds)
+            {
+                albumIds.Add(albumId); // HashSet silently ignores duplicates
+            }
             return GetCart(cartId);
         }
 
         public Cart RemoveItem(string cartId, int albumId)
         {
             var albumIds = GetOrCreateCart(cartId);
-            albumIds.Remove(albumId);
+            lock (albumIds)
+            {
+                albumIds.Remove(albumId);
+            }
             return GetCart(cartId);
         }
 
-        private List<int> GetOrCreateCart(string cartId)
-        {
-            if (!_carts.TryGetValue(cartId, out var list))
-            {
-                list = new List<int>();
-                _carts[cartId] = list;
-            }
-            return list;
-        }
+        private HashSet<int> GetOrCreateCart(string cartId) =>
+            _carts.GetOrAdd(cartId, _ => new HashSet<int>());
     }
 }

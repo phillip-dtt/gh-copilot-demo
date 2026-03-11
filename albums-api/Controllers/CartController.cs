@@ -14,7 +14,6 @@ namespace albums_api.Controllers
             _cartService = cartService;
         }
 
-        // GET /cart/{cartId}
         [HttpGet("{cartId}")]
         public IActionResult GetCart(string cartId)
         {
@@ -22,15 +21,19 @@ namespace albums_api.Controllers
             return Ok(cart);
         }
 
-        // POST /cart/{cartId}/items  body: { "albumId": 1 }
         [HttpPost("{cartId}/items")]
         public IActionResult AddItem(string cartId, [FromBody] AddItemRequest request)
         {
+            if (request.AlbumId <= 0)
+                return BadRequest("AlbumId must be a positive integer.");
+
             var cart = _cartService.AddItem(cartId, request.AlbumId);
+            if (cart == null)
+                return NotFound($"Album {request.AlbumId} not found.");
+
             return Ok(cart);
         }
 
-        // DELETE /cart/{cartId}/items/{albumId}
         [HttpDelete("{cartId}/items/{albumId}")]
         public IActionResult RemoveItem(string cartId, int albumId)
         {
