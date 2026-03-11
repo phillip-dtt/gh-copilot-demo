@@ -21,20 +21,39 @@
     </div>
     
     <div class="album-actions">
-      <button class="btn btn-primary">Add to Cart</button>
+      <button
+        class="btn"
+        :class="inCart ? 'btn-in-cart' : 'btn-primary'"
+        @click="toggleCart"
+      >
+        {{ inCart ? '✓ In Cart' : 'Add to Cart' }}
+      </button>
       <button class="btn btn-secondary">Preview</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Album } from '../types/album'
+import { useCartStore } from '../stores/cart'
 
 interface Props {
   album: Album
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+const cartStore = useCartStore()
+
+const inCart = computed(() => cartStore.albumIds.includes(props.album.id))
+
+const toggleCart = async (): Promise<void> => {
+  if (inCart.value) {
+    await cartStore.removeFromCart(props.album.id)
+  } else {
+    await cartStore.addToCart(props.album)
+  }
+}
 
 const handleImageError = (event: Event): void => {
   const target = event.target as HTMLImageElement
@@ -164,6 +183,16 @@ const handleImageError = (event: Event): void => {
 
 .btn-primary:hover {
   background: #5a6fd8;
+  transform: translateY(-2px);
+}
+
+.btn-in-cart {
+  background: #48bb78;
+  color: white;
+}
+
+.btn-in-cart:hover {
+  background: #38a169;
   transform: translateY(-2px);
 }
 

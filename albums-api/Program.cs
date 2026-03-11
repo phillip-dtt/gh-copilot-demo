@@ -1,16 +1,9 @@
 var builder = WebApplication.CreateBuilder(args);
 
-var DefaultHttpPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT") ?? "3500";
-var AlbumStateStore = "statestore";
-var CollectionId = Environment.GetEnvironmentVariable("COLLECTION_ID") ?? "GreatestHits";
-
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddHttpClient();
+builder.Services.AddSingleton<albums_api.Services.CartService>();
 
 builder.Services.AddCors(options => {
     options.AddDefaultPolicy(builder =>
@@ -33,13 +26,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
-// app.Urls.Add("${ASPNETCORE_URLS}");
-
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.UseRouting();
 
 app.MapGet("/", async context =>
 {

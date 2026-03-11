@@ -15,6 +15,10 @@ export default defineConfig({
       '/albums': {
         target: 'http://localhost:3000',
         changeOrigin: true
+      },
+      '^/cart/[0-9a-f]{8}-[0-9a-f]{4}': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
       }
     }
   }

@@ -1,58 +1,38 @@
 <template>
   <div class="app">
     <header class="header">
-      <h1>🎵 Album Collection</h1>
-      <p>Discover amazing music albums</p>
+      <div class="header-content">
+        <div class="header-text">
+          <RouterLink to="/" class="header-link">
+            <h1>🎵 Album Collection</h1>
+          </RouterLink>
+          <p>Discover amazing music albums</p>
+        </div>
+        <button class="cart-btn" @click="sidebarOpen = true">
+          🛒
+          <span v-if="cartStore.itemCount > 0" class="cart-badge">{{ cartStore.itemCount }}</span>
+        </button>
+      </div>
     </header>
 
     <main class="main">
-      <div v-if="loading" class="loading">
-        <div class="spinner"></div>
-        <p>Loading albums...</p>
-      </div>
-
-      <div v-else-if="error" class="error">
-        <p>{{ error }}</p>
-        <button @click="fetchAlbums" class="retry-btn">Try Again</button>
-      </div>
-
-      <div v-else class="albums-grid">
-        <AlbumCard 
-          v-for="album in albums" 
-          :key="album.id" 
-          :album="album" 
-        />
-      </div>
+      <RouterView />
     </main>
+
+    <CartSidebar :is-open="sidebarOpen" @close="sidebarOpen = false" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
-import AlbumCard from './components/AlbumCard.vue'
-import type { Album } from './types/album'
+import { useCartStore } from './stores/cart'
+import CartSidebar from './components/CartSidebar.vue'
 
-const albums = ref<Album[]>([])
-const loading = ref<boolean>(true)
-const error = ref<string | null>(null)
-
-const fetchAlbums = async (): Promise<void> => {
-  try {
-    loading.value = true
-    error.value = null
-    const response = await axios.get<Album[]>('/albums')
-    albums.value = response.data
-  } catch (err) {
-    error.value = 'Failed to load albums. Please make sure the API is running.'
-    console.error('Error fetching albums:', err)
-  } finally {
-    loading.value = false
-  }
-}
+const sidebarOpen = ref(false)
+const cartStore = useCartStore()
 
 onMounted(() => {
-  fetchAlbums()
+  cartStore.fetchCart()
 })
 </script>
 
@@ -63,9 +43,26 @@ onMounted(() => {
 }
 
 .header {
-  text-align: center;
   margin-bottom: 3rem;
   color: white;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-text {
+  text-align: center;
+}
+
+.header-link {
+  text-decoration: none;
+  color: inherit;
 }
 
 .header h1 {
@@ -77,6 +74,44 @@ onMounted(() => {
 .header p {
   font-size: 1.2rem;
   opacity: 0.9;
+  margin: 0;
+}
+
+.cart-btn {
+  position: absolute;
+  right: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  color: white;
+  font-size: 1.4rem;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.cart-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #e53e3e;
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .main {
@@ -84,76 +119,14 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem;
-  color: white;
-}
-
-.spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top: 4px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.error {
-  text-align: center;
-  padding: 4rem;
-  color: white;
-}
-
-.error p {
-  font-size: 1.2rem;
-  margin-bottom: 2rem;
-}
-
-.retry-btn {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 2px solid white;
-  padding: 0.75rem 2rem;
-  border-radius: 25px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.retry-btn:hover {
-  background: white;
-  color: #667eea;
-}
-
-.albums-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
-  padding: 1rem;
-}
-
 @media (max-width: 768px) {
   .app {
     padding: 1rem;
   }
-  
+
   .header h1 {
     font-size: 2rem;
   }
-  
-  .albums-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
 }
 </style>
+
